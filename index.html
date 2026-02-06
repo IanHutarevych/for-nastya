@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Для Настки ❤️</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            background-color: #fff0f3;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* Сучасна кнопка музики */
+        #music-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #ffb3c1;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(255, 75, 110, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #music-toggle svg {
+            width: 24px;
+            height: 24px;
+            color: #ff4b6e;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        #music-toggle:hover {
+            transform: scale(1.1);
+            border-color: #ff4b6e;
+            background: white;
+        }
+
+        /* Анімація пульсації */
+        .playing {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 75, 110, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 75, 110, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 75, 110, 0); }
+        }
+
+        .card {
+            background: white;
+            padding: 3rem;
+            border-radius: 30px;
+            box-shadow: 0 15px 40px rgba(255, 75, 110, 0.2);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transition: all 0.5s ease-in-out;
+            position: relative;
+            z-index: 10;
+        }
+
+        .shake { animation: shake 0.4s both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            30%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .bg-heart {
+            position: fixed;
+            top: -20px;
+            font-size: 20px;
+            user-select: none;
+            pointer-events: none;
+            z-index: 1;
+            animation: fall linear forwards;
+        }
+        @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+
+        h2 { color: #ff4b6e; margin-bottom: 25px; font-size: 1.6rem; }
+
+        .options-container { display: grid; grid-template-columns: 1fr; gap: 12px; }
+
+        .option-btn, .action-btn, .nav-btn {
+            background-color: white;
+            color: #ff4b6e;
+            border: 2px solid #ffb3c1;
+            padding: 12px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 17px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .option-btn:hover, .action-btn:hover, .nav-btn:hover {
+            background-color: #ff4b6e;
+            color: white;
+            border-color: #ff4b6e;
+            transform: translateY(-2px);
+        }
+
+        #error-msg {
+            color: #ff4b6e; font-weight: 600; margin-top: 15px;
+            min-height: 20px; font-size: 0.95rem; opacity: 0; transition: opacity 0.3s;
+        }
+
+        #quest-screen, #valentine-screen, #final-screen, #gallery-screen { display: none; }
+
+        .letter {
+            font-style: italic; line-height: 1.7; color: #444;
+            background: #fffafa; padding: 25px; border-radius: 15px;
+            border-left: 5px solid #ff4b6e; text-align: left; margin-bottom: 20px;
+        }
+
+        #timer {
+            margin-bottom: 20px; font-weight: bold; color: #ff4b6e;
+            font-size: 1.1rem; border-bottom: 1px solid #ffdae0; padding-bottom: 15px;
+        }
+
+        .slider-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            margin: 20px 0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .slider-container img {
+            width: 100%; height: 100%; object-fit: cover; display: none;
+        }
+        .slider-container img.active { display: block; }
+
+        .slider-controls { display: flex; justify-content: center; gap: 15px; margin-top: 10px; }
+
+        #no-btn { position: absolute; transition: 0.1s; z-index: 1000; }
+    </style>
+</head>
+<body>
+
+<audio id="bg-music" src="Heavenly.mp3" loop></audio>
+
+<div id="music-toggle" onclick="toggleMusic()">
+    <svg id="speaker-icon" viewBox="0 0 24 24">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+        <path id="speaker-waves" d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        <line id="speaker-mute" x1="23" y1="1" x2="1" y2="23" style="display:none;"></line>
+    </svg>
+</div>
+
+<div class="card" id="main-card">
+    <div id="start-screen">
+        <h2>Настка, ти готова до чогось особливого? ❤️</h2>
+        <button class="action-btn" onclick="startQuest()">ТАК, Я ГОТОВА!</button>
+    </div>
+
+    <div id="quest-screen">
+        <h2 id="question-text"></h2>
+        <div id="options" class="options-container"></div>
+        <div id="error-msg"></div>
+    </div>
+
+    <div id="valentine-screen">
+        <h2>Настка, ти будеш моєю валентинкою? ❤️</h2>
+        <div style="display:flex; justify-content:center; gap:20px; height:60px; margin-top:20px;">
+            <button class="action-btn" id="yes-btn" onclick="celebrate()">ТАК!</button>
+            <button class="action-btn" id="no-btn" onmouseover="moveNoButton()">Ні</button>
+        </div>
+    </div>
+
+    <div id="final-screen">
+        <div id="timer">Завантаження часу...</div>
+        <div class="letter" id="typewriter-text"></div>
+        <button class="action-btn" id="btn-to-gallery" style="display:none;" onclick="showGallery()">Подивитись наші фото-картки? 📸</button>
+    </div>
+
+    <div id="gallery-screen">
+        <h2>Наші моменти ❤️</h2>
+        <div class="slider-container">
+            <img src="image1.jpeg" class="active">
+            <img src="image2.jpeg">
+            <img src="image3.jpeg">
+            <img src="image4.jpeg">
+            <img src="image5.jpeg">
+            <img src="image6.jpeg">
+        </div>
+        <div class="slider-controls">
+            <button class="nav-btn" onclick="changeSlide(-1)">❮ Назад</button>
+            <button class="nav-btn" onclick="changeSlide(1)">Вперед ❯</button>
+        </div>
+        <br>
+        <button class="action-btn" onclick="backToLetter()">⬅️ Повернутись до листа</button>
+    </div>
+</div>
+
+<script>
+    const errorTexts = [
+        "Найн! Давай по новій! ❌",
+        "Настюш, ну ти чого? Згадуй! 🤔",
+        "Хтось сьогодні неуважний... Спробуй ще раз! ❤️",
+        "Не вгадала! Тисни іншу кнопку! ✨",
+        "Ммм, а я думав ти пам'ятаєш... 🧐",
+        "Ой! Це була пастка! Давай ще раз! 😅",
+        "Майже! Але ні. Спробуй знову! 🙌",
+        "Ти точно моя Настка? Згадуй краще! 😂",
+        "Помилочка вийшла! Тисни правильну! 🎯",
+        "Я вірю в тебе! Давай ще спробу! 💪"
+    ];
+
+    const questions = [
+        { q: "В якій кафешці було наше перше побачення?", options: ["Бакара", "Віденська", "Парк", "Островок"], correct: 1 },
+        { q: "Яку страву ми вперше приготували разом?", options: ["Піца", "Суші", "Млинці", "Паста"], correct: 3 },
+        { q: "Який мій улюблений колір на тобі?", options: ["Червоний", "Чорний", "Білий", "Голубий"], correct: 2 },
+        { q: "Скільки місяців ми вже разом?", options: ["35 місяців", "37 місяців", "28 місяців", "33 місяці"], correct: 0 },
+        { q: "В яке місто за кордоном ми першим ділом поідемо?", options: ["Рим", "Кападокія", "Вена", "Токіо"], correct: 1 },
+        { q: "Що я тобі прям зараз подарую?", options: ["Браслет", "Фуглер", "Плюшеву іграшку", "Чашку"], correct: 0 }
+    ];
+
+    let currentStep = 0;
+    let currentSlide = 0;
+    const startDate = new Date('2023-03-08T00:00:00');
+    const music = document.getElementById("bg-music");
+
+    function toggleMusic() {
+        const btn = document.getElementById("music-toggle");
+        const waves = document.getElementById("speaker-waves");
+        const muteLine = document.getElementById("speaker-mute");
+
+        if (music.paused) {
+            music.play();
+            btn.classList.add("playing");
+            waves.style.display = "block";
+            muteLine.style.display = "none";
+        } else {
+            music.pause();
+            btn.classList.remove("playing");
+            waves.style.display = "none";
+            muteLine.style.display = "block";
+        }
+    }
+
+    function startQuest() {
+        music.play();
+        document.getElementById("music-toggle").classList.add("playing");
+        document.getElementById("start-screen").style.display = "none";
+        document.getElementById("quest-screen").style.display = "block";
+        loadQuestion();
+    }
+
+    function createHeart() {
+        const heart = document.createElement('div');
+        heart.className = 'bg-heart';
+        heart.innerHTML = ['❤️','💖','💗','💕'][Math.floor(Math.random()*4)];
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.animationDuration = Math.random() * 3 + 2 + 's';
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 5000);
+    }
+    setInterval(createHeart, 400);
+
+    function loadQuestion() {
+        document.getElementById("error-msg").style.opacity = "0";
+        const qData = questions[currentStep];
+        document.getElementById("question-text").innerText = qData.q;
+        const container = document.getElementById("options");
+        container.innerHTML = "";
+        qData.options.forEach((opt, index) => {
+            const btn = document.createElement("button");
+            btn.className = "option-btn";
+            btn.innerText = opt;
+            btn.onclick = () => checkAnswer(index);
+            container.appendChild(btn);
+        });
+    }
+
+    function checkAnswer(selectedIndex) {
+        const card = document.getElementById("main-card");
+        if (selectedIndex === questions[currentStep].correct) {
+            currentStep++;
+            if (currentStep < questions.length) loadQuestion();
+            else showValentine();
+        } else {
+            card.classList.add("shake");
+            const msg = document.getElementById("error-msg");
+            msg.innerText = errorTexts[Math.floor(Math.random() * errorTexts.length)];
+            msg.style.opacity = "1";
+            setTimeout(() => card.classList.remove("shake"), 400);
+        }
+    }
+
+    function showValentine() {
+        document.getElementById("quest-screen").style.display = "none";
+        document.getElementById("valentine-screen").style.display = "block";
+    }
+
+    function moveNoButton() {
+        const btn = document.getElementById("no-btn");
+        const card = document.getElementById("main-card");
+        btn.style.left = Math.random() * (card.offsetWidth - btn.offsetWidth) + "px";
+        btn.style.top = Math.random() * (card.offsetHeight - btn.offsetHeight) + "px";
+    }
+
+    function celebrate() {
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        document.getElementById("valentine-screen").style.display = "none";
+        document.getElementById("final-screen").style.display = "block";
+        document.getElementById("main-card").style.maxWidth = "650px";
+        startTypewriter();
+        startTimer();
+    }
+
+    function startTypewriter() {
+        const text = "Настюш, ти навіть не уявляєш, як багато значиш для мене. Ці дні поруч із тобою стали найкращим часом у моєму житті. Дякую за підтримку та твою ніжність. Ти — моє натхнення. Я обіцяю, що ми побачимо Кападокію разом! Кохаю тебе безмежно! ❤️";
+        let i = 0;
+        function type() {
+            if (i < text.length) {
+                document.getElementById("typewriter-text").innerHTML += text.charAt(i);
+                i++;
+                setTimeout(type, 45);
+            } else {
+                document.getElementById("btn-to-gallery").style.display = "inline-block";
+            }
+        }
+        type();
+    }
+
+    function startTimer() {
+        setInterval(() => {
+            const now = new Date();
+            const diff = now - startDate;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / 1000 / 60) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+            document.getElementById("timer").innerText = `Ми разом уже: ${d}д : ${h}г : ${m}хв : ${s}с`;
+        }, 1000);
+    }
+
+    function showGallery() {
+        document.getElementById("final-screen").style.display = "none";
+        document.getElementById("gallery-screen").style.display = "block";
+    }
+
+    function backToLetter() {
+        document.getElementById("gallery-screen").style.display = "none";
+        document.getElementById("final-screen").style.display = "block";
+    }
+
+    function changeSlide(direction) {
+        const slides = document.querySelectorAll(".slider-container img");
+        slides[currentSlide].classList.remove("active");
+        currentSlide = (currentSlide + direction + slides.length) % slides.length;
+        slides[currentSlide].classList.add("active");
+    }
+</script>
+
+</body>
+</html>
